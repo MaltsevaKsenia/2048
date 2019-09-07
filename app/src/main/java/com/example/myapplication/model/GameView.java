@@ -95,18 +95,14 @@ public class GameView extends GridLayout {
     }
 
     private void swipeLeft() {
-        Observable.from(cardMap.entrySet())
+        cardMap.entrySet()
+                .stream()
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
-                .map(card -> {
-                    IntStream.range(0, card.getKey().x)
-                            .boxed()
-                            .map(x -> new Point(x, card.getKey().y))
-                            .forEach(card2 ->
-                                    compareAndMerge(cardMap.get(card2), card.getValue()));
-                    return card;
-                })
-                .doOnError(throwable -> checkGameOver())
-                .subscribe();
+                .forEach(card -> IntStream.range(0, card.getKey().x)
+                        .boxed()
+                        .map(x -> new Point(x, card.getKey().y))
+                        .forEach(card2 ->
+                                compareAndMerge(cardMap.get(card2), card.getValue())));
     }
 
     private void compareAndMerge(Card card, Card anotherCard) {
@@ -122,48 +118,36 @@ public class GameView extends GridLayout {
 
 
     private void swipeRight() {
-        Observable.from(cardMap.entrySet())
+        cardMap.entrySet()
+                .stream()
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
-                .map(card -> {
-                    IntStream.range(card.getKey().x + 1, FIELD_SIZE)
-                            .boxed()
-                            .map(x -> new Point(x, card.getKey().y))
-                            .forEach(card1 ->
-                                    compareAndMerge(cardMap.get(card1), card.getValue()));
-                    return card;
-                })
-                .doOnError(throwable -> checkGameOver())
-                .subscribe();
+                .forEach(entry1 -> IntStream.range(entry1.getKey().x + 1, FIELD_SIZE)
+                        .boxed()
+                        .map(x -> new Point(x, entry1.getKey().y))
+                        .forEach(card1 ->
+                                compareAndMerge(cardMap.get(card1), entry1.getValue())));
     }
 
     private void swipeDown() {
-        Observable.from(cardMap.entrySet())
+        cardMap.entrySet()
+                .stream()
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
-                .map(card -> {
-                    IntStream.range(card.getKey().y + 1, 4)
-                            .boxed()
-                            .map(y -> new Point(card.getKey().x, y))
-                            .forEach(card1 ->
-                                    compareAndMerge(cardMap.get(card1), card.getValue()));
-                    return card;
-                })
-                .doOnError(throwable -> checkGameOver())
-                .subscribe();
+                .forEach(entry1 -> IntStream.range(entry1.getKey().y + 1, 4)
+                        .boxed()
+                        .map(y -> new Point(entry1.getKey().x, y))
+                        .forEach(card1 ->
+                                compareAndMerge(cardMap.get(card1), entry1.getValue())));
     }
 
     private void swipeUp() {
-        Observable.from(cardMap.entrySet())
+        cardMap.entrySet()
+                .stream()
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
-                .map(entry1 -> {
-                    IntStream.range(0, entry1.getKey().y)
-                            .boxed()
-                            .map(y -> new Point(entry1.getKey().x, y))
-                            .forEach(card1 ->
-                                    compareAndMerge(cardMap.get(card1), entry1.getValue()));
-                    return entry1;
-                })
-                .doOnError(throwable -> checkGameOver())
-                .subscribe();
+                .forEach(entry1 -> IntStream.range(0, entry1.getKey().y)
+                        .boxed()
+                        .map(y -> new Point(entry1.getKey().x, y))
+                        .forEach(card1 ->
+                                compareAndMerge(cardMap.get(card1), entry1.getValue())));
     }
 
     private void checkGameOver() {
