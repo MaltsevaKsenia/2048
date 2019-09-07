@@ -42,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void addScore(int i) {
-
         score += i;
         showScore();
 
@@ -59,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void createExitTipDialog() {
         new AlertDialog.Builder(MainActivity.this)
-                .setMessage("Wanna leave?")
+                .setMessage("Do you want to leave?")
                 .setPositiveButton("Yes", (dialogInterface, i) -> {
                     dialogInterface.dismiss();
                     finish();

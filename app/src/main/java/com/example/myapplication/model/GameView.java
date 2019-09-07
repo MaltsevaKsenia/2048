@@ -20,6 +20,7 @@ import rx.Observable;
 
 public class GameView extends GridLayout {
 
+    public static final int FIELD_SIZE = 4;
     private static List<Point> emptyPoints = new ArrayList<>();
     public int score;
     public boolean hasTouched = false;
@@ -66,7 +67,7 @@ public class GameView extends GridLayout {
                         }));
     }
 
-    private static void addRandomNum() {
+    private static void addRandomCardToField() {
         emptyPoints.clear();
         cardMap.entrySet()
                 .stream()
@@ -88,19 +89,17 @@ public class GameView extends GridLayout {
         MainActivity.getMainActivity().clearScore();
         cardMap.values()
                 .forEach(card -> card.setCardNumber(0));
-        addRandomNum();
-        addRandomNum();
+        addRandomCardToField();
+        addRandomCardToField();
     }
 
     private void swipeLeft() {
         Observable.from(cardMap.entrySet())
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
                 .map(card -> {
-                    ArrayList<Object> availablePointsToMove = new ArrayList<>();
-                    for (int j = 0; j < card.getKey().x; j++) {
-                        availablePointsToMove.add(new Point(j, card.getKey().y));
-                    }
-                    availablePointsToMove
+                    IntStream.range(0, card.getKey().x)
+                            .boxed()
+                            .map(x -> new Point(x, card.getKey().y))
                             .forEach(card2 ->
                                     compareAndMerge(cardMap.get(card2), card.getValue()));
                     return card;
@@ -109,13 +108,13 @@ public class GameView extends GridLayout {
                 .subscribe();
     }
 
-    private void compareAndMerge(Card card, Card card1) {
+    private void compareAndMerge(Card card, Card anotherCard) {
         if (card.getCardNumber() == 0) {
-            card.setCardNumber(card1.getCardNumber());
-            card1.setCardNumber(0);
-        } else if (card.equals(card1)) {
+            card.setCardNumber(anotherCard.getCardNumber());
+            anotherCard.setCardNumber(0);
+        } else if (card.equals(anotherCard)) {
             card.setCardNumber(card.getCardNumber() * 2);
-            card1.setCardNumber(0);
+            anotherCard.setCardNumber(0);
             MainActivity.getMainActivity().addScore(card.getCardNumber());
         }
     }
@@ -125,12 +124,11 @@ public class GameView extends GridLayout {
         Observable.from(cardMap.entrySet())
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
                 .map(card -> {
-                    List<Point> availablePointsToMove = new ArrayList<>();
-                    for (int j = card.getKey().x + 1; j < 4; j++) {
-                        availablePointsToMove.add(new Point(j, card.getKey().y));
-                    }
-                    availablePointsToMove.forEach(card1 ->
-                            compareAndMerge(cardMap.get(card1), card.getValue()));
+                    IntStream.range(card.getKey().x + 1, FIELD_SIZE)
+                            .boxed()
+                            .map(x -> new Point(x, card.getKey().y))
+                            .forEach(card1 ->
+                                    compareAndMerge(cardMap.get(card1), card.getValue()));
                     return card;
                 })
                 .doOnError(throwable -> checkGameOver())
@@ -141,11 +139,9 @@ public class GameView extends GridLayout {
         Observable.from(cardMap.entrySet())
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
                 .map(card -> {
-                    List<Point> availablePointsToMove = new ArrayList<>();
-                    for (int j = card.getKey().y + 1; j < 4; j++) {
-                        availablePointsToMove.add(new Point(card.getKey().x, j));
-                    }
-                    availablePointsToMove
+                    IntStream.range(card.getKey().y + 1, 4)
+                            .boxed()
+                            .map(y -> new Point(card.getKey().x, y))
                             .forEach(card1 ->
                                     compareAndMerge(cardMap.get(card1), card.getValue()));
                     return card;
@@ -158,11 +154,9 @@ public class GameView extends GridLayout {
         Observable.from(cardMap.entrySet())
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
                 .map(card -> {
-                    List<Point> availablePointsToMove = new ArrayList<>();
-                    for (int j = 0; j < card.getKey().y; j++) {
-                        availablePointsToMove.add(new Point(card.getKey().x, j));
-                    }
-                    availablePointsToMove
+                    IntStream.range(0, card.getKey().y)
+                            .boxed()
+                            .map(y -> new Point(card.getKey().x, y))
                             .forEach(card1 ->
                                     compareAndMerge(cardMap.get(card1), card.getValue()));
                     return card;
@@ -216,20 +210,20 @@ public class GameView extends GridLayout {
                     if (Math.abs(offsetX) > Math.abs(offsetY)) {
                         if (offsetX < -5) {
                             swipeLeft();
-                            addRandomNum();
+                            addRandomCardToField();
 
                         } else if (offsetX > 5) {
                             swipeRight();
-                            addRandomNum();
+                            addRandomCardToField();
 
                         }
                     } else {
                         if (offsetY < -5) {
                             swipeUp();
-                            addRandomNum();
+                            addRandomCardToField();
                         } else if (offsetY > 5) {
                             swipeDown();
-                            addRandomNum();
+                            addRandomCardToField();
 
                         }
                     }
