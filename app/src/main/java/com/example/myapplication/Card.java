@@ -14,15 +14,6 @@ public class Card extends FrameLayout {
     private int cardNumber = 0;
     private TextView cardView;
     private List<Point> availablePointsToMove;
-    private Point currentPoint;
-
-    public Point getCurrentPoint() {
-        return currentPoint;
-    }
-
-    public void setCurrentPoint(Point currentPoint) {
-        this.currentPoint = currentPoint;
-    }
 
     public List<Point> getUpPointsToMove(Point point) {
         availablePointsToMove = new ArrayList<>();
@@ -44,14 +35,6 @@ public class Card extends FrameLayout {
         availablePointsToMove = new ArrayList<>();
         for (int j = point.y + 1; j < 4; j++) {
             availablePointsToMove.add(new Point(point.x, j));
-        }
-        return availablePointsToMove;
-    }
-
-    public List<Point> getLeftPointsToMove(Point point) {
-        availablePointsToMove = new ArrayList<>();
-        for (int j = 0; j < point.x; j++) {
-            availablePointsToMove.add(new Point(j, point.y));
         }
         return availablePointsToMove;
     }
