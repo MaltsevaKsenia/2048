@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.myapplication.model;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -8,18 +8,21 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.GridLayout;
 
+import com.example.myapplication.activity.MainActivity;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.IntStream;
 
 import rx.Observable;
 
 public class GameView extends GridLayout {
 
+    public static final int FIELD_SIZE = 4;//todo add possibility to choose filed size
     private static List<Point> emptyPoints = new ArrayList<>();
-    public int[][] gameNumbers = new int[4][4];
     public int score;
     public boolean hasTouched = false;
     public static Map<Point, Card> cardMap = new HashMap<>(16);
@@ -46,29 +49,26 @@ public class GameView extends GridLayout {
     }
 
     @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-
-        super.onSizeChanged(w, h, oldw, oldh);
-        int fieldSize = (Math.min(w, h) - 10) / 4;
+    protected void onSizeChanged(int weight, int height, int oldWeight, int oldHeight) {
+        super.onSizeChanged(weight, height, oldWeight, oldHeight);
+        int fieldSize = (Math.min(weight, height) - 10) / 4;
         addCards(fieldSize);
         startGame();
-
     }
 
     private void addCards(int size) {
         this.removeAllViews();
-        Card c;
-        for (int y = 0; y < 4; ++y) {
-            for (int x = 0; x < 4; ++x) {
-                c = new Card(getContext());
-                c.setCardNumber(0);
-                addView(c, size, size);
-                cardMap.put(new Point(x, y), c);
-            }
-        }
+        IntStream.range(0, 4)
+                .forEach(y -> IntStream.range(0, 4)
+                        .forEach(x -> {
+                            Card card = new Card(getContext());
+                            card.setCardNumber(0);
+                            addView(card, size, size);
+                            cardMap.put(new Point(x, y), card);
+                        }));
     }
 
-    private static void addRandomNum() {
+    private static void addRandomCardToField() {
         emptyPoints.clear();
         cardMap.entrySet()
                 .stream()
@@ -90,111 +90,109 @@ public class GameView extends GridLayout {
         MainActivity.getMainActivity().clearScore();
         cardMap.values()
                 .forEach(card -> card.setCardNumber(0));
-        addRandomNum();
-        addRandomNum();
+        addRandomCardToField();
+        addRandomCardToField();
     }
 
     private void swipeLeft() {
-        final AtomicBoolean wasMoved = new AtomicBoolean();
         Observable.from(cardMap.entrySet())
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
                 .map(card -> {
-                    card.getValue().getLeftPointsToMove(card.getKey())
-                            .forEach(card1 ->
-                                    dummyLoop(wasMoved, cardMap.get(card1), card.getValue()));
-                    return wasMoved.get();
+                    IntStream.range(0, card.getKey().x)
+                            .boxed()
+                            .map(x -> new Point(x, card.getKey().y))
+                            .forEach(card2 ->
+                                    compareAndMerge(cardMap.get(card2), card.getValue()));
+                    return card;
                 })
-                .map(entry -> wasMoved)
-                .filter(AtomicBoolean::get)
+                .doOnError(throwable -> checkGameOver())
                 .subscribe();
     }
 
-    private void dummyLoop(AtomicBoolean wasMoved, Card card, Card card1) {
+    private void compareAndMerge(Card card, Card anotherCard) {
         if (card.getCardNumber() == 0) {
-            card.setCardNumber(card1.getCardNumber());
-            card1.setCardNumber(0);
-        } else if (card.equals(card1)) {
+            card.setCardNumber(anotherCard.getCardNumber());
+            anotherCard.setCardNumber(0);
+        } else if (card.equals(anotherCard)) {
             card.setCardNumber(card.getCardNumber() * 2);
-            card1.setCardNumber(0);
+            anotherCard.setCardNumber(0);
             MainActivity.getMainActivity().addScore(card.getCardNumber());
         }
     }
 
 
     private void swipeRight() {
-        final AtomicBoolean wasMoved = new AtomicBoolean();
         Observable.from(cardMap.entrySet())
-                .filter(entry -> entry.getValue().getCardNumber() >0)
+                .filter(entry -> entry.getValue().getCardNumber() > 0)
                 .map(card -> {
-                    card.getValue().getRightPointsToMove(card.getKey())
+                    IntStream.range(card.getKey().x + 1, FIELD_SIZE)
+                            .boxed()
+                            .map(x -> new Point(x, card.getKey().y))
                             .forEach(card1 ->
-                                    dummyLoop(wasMoved, cardMap.get(card1), card.getValue()));
-                    return wasMoved.get();
+                                    compareAndMerge(cardMap.get(card1), card.getValue()));
+                    return card;
                 })
-                .map(entry -> wasMoved)
-                .filter(AtomicBoolean::get)
-                .subscribe(atomicBoolean -> {
-//                    addRandomNum();
-                    checkGameOver();
-                });
+                .doOnError(throwable -> checkGameOver())
+                .subscribe();
     }
 
     private void swipeDown() {
-        final AtomicBoolean wasMoved = new AtomicBoolean();
         Observable.from(cardMap.entrySet())
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
                 .map(card -> {
-                    card.getValue().getDownPointsToMove(card.getKey())
+                    IntStream.range(card.getKey().y + 1, 4)
+                            .boxed()
+                            .map(y -> new Point(card.getKey().x, y))
                             .forEach(card1 ->
-                                    dummyLoop(wasMoved, cardMap.get(card1), card.getValue()));
-                    return wasMoved.get();
+                                    compareAndMerge(cardMap.get(card1), card.getValue()));
+                    return card;
                 })
-                .map(entry -> wasMoved)
-                .filter(AtomicBoolean::get)
-                .subscribe(atomicBoolean -> {
-//                    addRandomNum();
-                    checkGameOver();
-                });
+                .doOnError(throwable -> checkGameOver())
+                .subscribe();
     }
 
     private void swipeUp() {
-        final AtomicBoolean wasMoved = new AtomicBoolean();
         Observable.from(cardMap.entrySet())
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
-                .map(card -> {
-                    card.getValue().getUpPointsToMove(card.getKey())
+                .map(entry1 -> {
+                    IntStream.range(0, entry1.getKey().y)
+                            .boxed()
+                            .map(y -> new Point(entry1.getKey().x, y))
                             .forEach(card1 ->
-                                    dummyLoop(wasMoved, cardMap.get(card1), card.getValue()));
-                    return wasMoved.get();
+                                    compareAndMerge(cardMap.get(card1), entry1.getValue()));
+                    return entry1;
                 })
-                .map(entry -> wasMoved)
-                .filter(AtomicBoolean::get)
-                .subscribe(atomicBoolean -> {
-//                    addRandomNum();
-                    checkGameOver();
-                });
+                .doOnError(throwable -> checkGameOver())
+                .subscribe();
     }
 
     private void checkGameOver() {
-        boolean isOver = true;
-        ALL:
-        for (int y = 0; y < 4; ++y) {
-            for (int x = 0; x < 4; ++x) {
-                Point point = new Point(x, y);
-                Card card = cardMap.get(point);
-                if (card.getCardNumber() == 0 ||
-                        (x < 3 && card.getCardNumber() == cardMap.get(new Point(x + 1, y)).getCardNumber()) ||
-                        (y < 3 && card.getCardNumber() == cardMap.get(new Point(x, y + 1)).getCardNumber())) {
-                    isOver = false;
-                    break ALL;
-                }
-            }
-        }
-        if (isOver) {
-            new AlertDialog.Builder(getContext()).setTitle("Game over!").setMessage("Current score:" + MainActivity.score + "，Keep moving！").setPositiveButton("Click to start a new game", (dialogInterface, i) -> startGame()).show();
+        AtomicBoolean isOver = new AtomicBoolean(true);
+        IntStream.range(0, 4)
+                .forEach(y ->
+                        IntStream.range(0, 4)
+                                .forEach(x -> {
+                                    Point point = new Point(x, y);
+                                    Card card = cardMap.get(point);
+                                    //todo remove if statement
+                                    if (card.getCardNumber() == 0 ||
+                                            (x < 3 && card.getCardNumber() == cardMap.get(new Point(x + 1, y)).getCardNumber()) ||
+                                            (y < 3 && card.getCardNumber() == cardMap.get(new Point(x, y + 1)).getCardNumber())) {
+                                        isOver.set(false);
+                                    }
+                                }));
+
+        if (isOver.get()) {
+            new AlertDialog
+                    .Builder(getContext())
+                    .setTitle("Game over!")
+                    .setMessage("Current score:" + MainActivity.score + "，Keep moving！")
+                    .setPositiveButton("Click to start a new game", (dialogInterface, i) -> startGame())
+                    .show();
         }
     }
 
+    //todo extract to outer class
     class Listener implements View.OnTouchListener {
 
         private float startX, startY, offsetX, offsetY;
@@ -208,11 +206,6 @@ public class GameView extends GridLayout {
 
             score = MainActivity.score;
 
-            for (int y = 0; y < 4; ++y) {
-                for (int x = 0; x < 4; ++x) {
-                    gameNumbers[y][x] = cardMap.get(new Point(x, y)).getCardNumber();
-                }
-            }
             switch (motionEvent.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     startX = motionEvent.getX();
@@ -225,20 +218,20 @@ public class GameView extends GridLayout {
                     if (Math.abs(offsetX) > Math.abs(offsetY)) {
                         if (offsetX < -5) {
                             swipeLeft();
-                            addRandomNum();
+                            addRandomCardToField();
 
                         } else if (offsetX > 5) {
                             swipeRight();
-                            addRandomNum();
+                            addRandomCardToField();
 
                         }
                     } else {
                         if (offsetY < -5) {
                             swipeUp();
-                            addRandomNum();
+                            addRandomCardToField();
                         } else if (offsetY > 5) {
                             swipeDown();
-                            addRandomNum();
+                            addRandomCardToField();
 
                         }
                     }
