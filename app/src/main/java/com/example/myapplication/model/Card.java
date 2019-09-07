@@ -1,9 +1,11 @@
-package com.example.myapplication;
+package com.example.myapplication.model;
 
 import android.content.Context;
 import android.view.Gravity;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+
+import com.example.myapplication.R;
 
 public class Card extends FrameLayout {
 

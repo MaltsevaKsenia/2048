@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.myapplication.model;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -7,6 +7,8 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.GridLayout;
+
+import com.example.myapplication.activity.MainActivity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
