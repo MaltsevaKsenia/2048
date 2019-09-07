@@ -1,43 +1,14 @@
 package com.example.myapplication;
 
 import android.content.Context;
-import android.graphics.Point;
 import android.view.Gravity;
 import android.widget.FrameLayout;
 import android.widget.TextView;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class Card extends FrameLayout {
 
     private int cardNumber = 0;
     private TextView cardView;
-    private List<Point> availablePointsToMove;
-
-    public List<Point> getUpPointsToMove(Point point) {
-        availablePointsToMove = new ArrayList<>();
-        for (int j = 0; j < point.y; j++) {
-            availablePointsToMove.add(new Point(point.x, j));
-        }
-        return availablePointsToMove;
-    }
-
-    public List<Point> getRightPointsToMove(Point point) {
-        availablePointsToMove = new ArrayList<>();
-        for (int j = point.x + 1; j < 4; j++) {
-            availablePointsToMove.add(new Point(j, point.y));
-        }
-        return availablePointsToMove;
-    }
-
-    public List<Point> getDownPointsToMove(Point point) {
-        availablePointsToMove = new ArrayList<>();
-        for (int j = point.y + 1; j < 4; j++) {
-            availablePointsToMove.add(new Point(point.x, j));
-        }
-        return availablePointsToMove;
-    }
 
     public Card(Context context) {
         super(context);

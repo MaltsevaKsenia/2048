@@ -12,8 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 import rx.Observable;
@@ -93,7 +91,6 @@ public class GameView extends GridLayout {
     }
 
     private void swipeLeft() {
-        final AtomicBoolean wasMoved = new AtomicBoolean();
         Observable.from(cardMap.entrySet())
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
                 .map(card -> {
@@ -104,10 +101,8 @@ public class GameView extends GridLayout {
                     availablePointsToMove
                             .forEach(card2 ->
                                     compareAndMerge(cardMap.get(card2), card.getValue()));
-                    return wasMoved.get();
+                    return card;
                 })
-                .map(entry -> wasMoved)
-                .filter(AtomicBoolean::get)
                 .doOnError(throwable -> checkGameOver())
                 .subscribe();
     }
@@ -128,9 +123,12 @@ public class GameView extends GridLayout {
         Observable.from(cardMap.entrySet())
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
                 .map(card -> {
-                    card.getValue().getRightPointsToMove(card.getKey())
-                            .forEach(card1 ->
-                                    compareAndMerge(cardMap.get(card1), card.getValue()));
+                    List<Point> availablePointsToMove = new ArrayList<>();
+                    for (int j = card.getKey().x + 1; j < 4; j++) {
+                        availablePointsToMove.add(new Point(j, card.getKey().y));
+                    }
+                    availablePointsToMove.forEach(card1 ->
+                            compareAndMerge(cardMap.get(card1), card.getValue()));
                     return card;
                 })
                 .doOnError(throwable -> checkGameOver())
@@ -158,7 +156,11 @@ public class GameView extends GridLayout {
         Observable.from(cardMap.entrySet())
                 .filter(entry -> entry.getValue().getCardNumber() > 0)
                 .map(card -> {
-                    card.getValue().getUpPointsToMove(card.getKey())
+                    List<Point> availablePointsToMove = new ArrayList<>();
+                    for (int j = 0; j < card.getKey().y; j++) {
+                        availablePointsToMove.add(new Point(card.getKey().x, j));
+                    }
+                    availablePointsToMove
                             .forEach(card1 ->
                                     compareAndMerge(cardMap.get(card1), card.getValue()));
                     return card;
